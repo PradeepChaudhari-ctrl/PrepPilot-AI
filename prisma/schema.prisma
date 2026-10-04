@@ -1,0 +1,67 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Student {
+  id                 String          @id @default(cuid())
+  name               String
+  email              String          @unique
+  branch             String?         // CSE, AI/ML, IT, ECE, Mech, Other
+  year               Int?            // 1, 2, 3, 4
+  skillsJson         String?         // JSON string array of skills: ["Python", "Java", "SQL", "DSA", ...]
+  targetMode         String?         // "Campus Placement" | "Internship"
+  companyStyle       String?         // "TCS", "Infosys", "Wipro", "Startup", "Generic"
+  languageMode       String?         @default("English") // "English" | "Hinglish"
+  targetRole         String?         // optional target role/JD
+  resumeText         String?
+  resumeAnalysisJson String?         // { claimedSkills: [{skill, level}], projects: [{name, tech}], claims: [string] }
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  interviews         Interview[]
+  topicProgress      TopicProgress[]
+}
+
+model Interview {
+  id           String    @id @default(cuid())
+  studentId    String
+  createdAt    DateTime  @default(now())
+  overallScore Float?    // Placement Readiness Score (0-100)
+  reportJson   String?   // JSON object with report details: topicScores, readinessScore, weakTopics, top3Weaknesses, resumeTruthCheck, studyPlan
+
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers      Answer[]
+}
+
+model Answer {
+  id            String    @id @default(cuid())
+  interviewId   String
+  round         String    // "Intro", "Technical", "Project Deep Dive", "HR"
+  question      String
+  answer        String?
+  topic         String?
+  score         Float?    // score /10
+  breakdownJson String?   // { correctness, relevance, structure, depth, communication }
+  feedbackJson  String?   // { mainIssue, problems: string[], betterAnswer, englishRewrite?, tips: string[] }
+  retryAnswer   String?
+  retryScore    Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  interview     Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+}
+
+model TopicProgress {
+  id        String   @id @default(cuid())
+  studentId String
+  topic     String
+  score     Float    // 0-100
+  updatedAt DateTime @default(now())
+
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
